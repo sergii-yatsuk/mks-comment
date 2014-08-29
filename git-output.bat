@@ -1,0 +1,1 @@
+python "%~dp0\git-output.py" --output %1 %2
