@@ -1,9 +1,10 @@
 import subprocess
 from optparse import OptionParser
 import re
+import os
 
 def RunCmd(path):
-   im = subprocess.Popen(path, shell=True, stdout=subprocess.PIPE)
+   im = subprocess.Popen(path, stdout=subprocess.PIPE)
    return str(im.stdout.read().decode())
 
 class MKSIssue:
@@ -82,6 +83,30 @@ class MKSOutput(MKSIssue):
    def GetTaskNumber(self):
       return self._parseField('Output To Task Relationship')
 
+def generateComment(output):
+   inspection = MKSInspection(output.GetInspectionNumber())
+
+   task = MKSTask(output.GetTaskNumber())
+
+   return "Description :\r\n"\
+          "{output_name}\r\n"\
+          "---Output description---\r\n"\
+          "{output_description}\r\n"\
+          "---Task Description---\r\n"\
+          "{task_name}\r\n"\
+          "MKS Output ID: mks://{output_number}\r\n"\
+          "MKS Feature ID: mks://{feature_id}\r\n"\
+          "MKS Project Name: {project_name}\r\n"\
+          "Reviewed by:  {inspection_number} {moderator}, {inspectors}\r\n".format(output_name=output.Name(),
+                 output_description=output.Description(),
+                 task_name=task.Name(),
+                 output_number=output.Number(),
+                 feature_id=task.FeatureID(),
+                 project_name=task.ProjectName(),
+                 inspection_number=inspection.Number(),
+                 moderator=inspection.Moderator(),
+                 inspectors=inspection.Ispectors())
+
 def SearchOutputByHash(hash):
    myOutputs = RunCmd('im.exe issues --query="My outputs" --fields=ID').split()
 
@@ -92,8 +117,16 @@ def SearchOutputByHash(hash):
 
    return None
 
+def CommitBranch(branch):
+   commitHash = RunCmd([r"git.exe","rev-parse", branch] )
+   output_number = SearchOutputByHash(commitHash)
+   output = MKSOutput(output_number)
+   RunCmd([r"git.exe","merge", "--squash", branch] )
+   RunCmd([r"git.exe","commit", "-m", generateComment(output)] )
+
 
 def main():
+   print(os.getcwd())
    parser = OptionParser(usage="usage: %prog [options]")
    parser.add_option("-o", "--output", type="int",
                      dest="output_number", default=False, metavar="NUM",
@@ -104,8 +137,16 @@ def main():
    parser.add_option("-g", "--hash",
                      dest="commit_hash", default=False, metavar="NUM",
                      help="search output by hash")
+   parser.add_option("-b", "--branch",
+                     dest="branch", default=False, metavar="NUM",
+                     help="commit branch")
 
    (options, args) = parser.parse_args()
+
+
+   if options.branch:
+      CommitBranch(options.branch)
+      return
 
 
    output_number = options.output_number
@@ -126,29 +167,8 @@ def main():
       if not output.InspectionCompleted():
          raise Exception("Inspection is not completed")
 
-   inspection = MKSInspection(output.GetInspectionNumber())
+   print(generateComment(output))
 
-   task = MKSTask(output.GetTaskNumber())
-
-   print("Description :\n"
-         "{output_name}\n"
-         "---Output description---\n"
-         "{output_description}\n"
-         "---Task Description---\n"
-         "{task_name}\n"
-         "MKS Output ID: mks://{output_number}\n"
-         "MKS Feature ID: mks://{feature_id}\n"
-         "MKS Project Name: {project_name}\n"
-         "Reviewed by:  {inspection_number} {moderator}, {inspectors}\n"
-         .format(output_name=output.Name(),
-                 output_description=output.Description(),
-                 task_name=task.Name(),
-                 output_number=output.Number(),
-                 feature_id=task.FeatureID(),
-                 project_name=task.ProjectName(),
-                 inspection_number=inspection.Number(),
-                 moderator=inspection.Moderator(),
-                 inspectors=inspection.Ispectors()))
 
 
 if __name__ == "__main__":
