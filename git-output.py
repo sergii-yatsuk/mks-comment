@@ -88,16 +88,17 @@ def generateComment(output):
 
    task = MKSTask(output.GetTaskNumber())
 
-   return "Description :\r\n"\
-          "{output_name}\r\n"\
-          "---Output description---\r\n"\
-          "{output_description}\r\n"\
-          "---Task Description---\r\n"\
-          "{task_name}\r\n"\
-          "MKS Output ID: mks://{output_number}\r\n"\
-          "MKS Feature ID: mks://{feature_id}\r\n"\
-          "MKS Project Name: {project_name}\r\n"\
-          "Reviewed by:  {inspection_number} {moderator}, {inspectors}\r\n".format(output_name=output.Name(),
+   return "{output_description}\n\n"\
+          "Description :\n"\
+          "{output_name}\n"\
+          "---Output description---\n"\
+          "{output_description}\n"\
+          "---Task Description---\n"\
+          "{task_name}\n"\
+          "MKS Output ID: mks://{output_number}\n"\
+          "MKS Feature ID: mks://{feature_id}\n"\
+          "MKS Project Name: {project_name}\n"\
+          "Reviewed by:  {inspection_number} {moderator}, {inspectors}\n".format(output_name=output.Name(),
                  output_description=output.Description(),
                  task_name=task.Name(),
                  output_number=output.Number(),
