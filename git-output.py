@@ -152,7 +152,7 @@ def main():
 
    output_number = options.output_number
 
-   if options.commit_hash is not None:
+   if options.commit_hash:
       output_number = SearchOutputByHash(options.commit_hash)
       if output_number is None:
          print("Can't find specified has, try generate comment by OutputID")
